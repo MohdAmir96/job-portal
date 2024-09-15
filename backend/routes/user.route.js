@@ -1,5 +1,11 @@
 import express from "express";
-import { logIn, registerUser } from "../controllers/user.controller.js";
+import isAuthenticated from "./../middlewares/isAuthenticated.js";
+import {
+  logIn,
+  logout,
+  registerUser,
+  updateProfile,
+} from "../controllers/user.controller.js";
 
 // Initialize the router
 const router = express.Router();
@@ -9,5 +15,11 @@ router.post("/register", registerUser);
 
 // User login route
 router.post("/login", logIn);
+
+// User update profile route
+router.put("/profile/update", isAuthenticated, updateProfile);
+
+// User logout
+router.post("/logout", logout);
 
 export default router;

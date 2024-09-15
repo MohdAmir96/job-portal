@@ -2,14 +2,12 @@ import jwt from "jsonwebtoken";
 import { User } from "../models/user.modal.js";
 import bcrypt from "bcryptjs";
 
-// Registration (Sign Up) Controller
 export const registerUser = async (req, res) => {
   try {
-    const { fullName, email, phoneNumber, password, name } = req.body;
-
+    const { fullname, email, phoneNumber, password, role } = req.body;
     // Check if required fields are present
     if (
-      [fullName, email, phoneNumber, password, name].some((field) => !field)
+      [fullname, email, phoneNumber, password, role].some((field) => !field)
     ) {
       return res
         .status(400)
@@ -29,11 +27,11 @@ export const registerUser = async (req, res) => {
 
     // Create a new user
     user = await User.create({
-      fullName,
+      fullname,
       email,
       phoneNumber,
       password: hashedPassword,
-      name,
+      role,
     });
 
     return res
@@ -45,7 +43,6 @@ export const registerUser = async (req, res) => {
   }
 };
 
-// Login Controller
 export const logIn = async (req, res) => {
   try {
     const { email, password, role } = req.body;
@@ -83,7 +80,7 @@ export const logIn = async (req, res) => {
     // Sanitize user data to avoid sending sensitive info
     const userData = {
       _id: user._id,
-      fullName: user.fullName,
+      fullname: user.fullname,
       email: user.email,
       phoneNumber: user.phoneNumber,
       role: user.role,
@@ -106,5 +103,60 @@ export const logIn = async (req, res) => {
   } catch (error) {
     console.error(error);
     return res.status(500).json({ message: "Server error", success: false });
+  }
+};
+
+export const updateProfile = async (req, res) => {
+  try {
+    const { fullname, email, phoneNumber, bio, skills } = req.body;
+    let skillsArray;
+    if (skills) {
+      skillsArray = skills.split(",");
+    }
+    const userId = req.id; // middleware authentication
+    let user = await User.findById(userId);
+
+    if (!user) {
+      return res.status(400).json({
+        message: "User not found.",
+        success: false,
+      });
+    }
+    // updating data
+    if (fullname) user.fullname = fullname;
+    if (email) user.email = email;
+    if (phoneNumber) user.phoneNumber = phoneNumber;
+    if (bio) user.profile.bio = bio;
+    if (skills) user.profile.skills = skillsArray;
+
+    await user.save();
+
+    user = {
+      _id: user._id,
+      fullname: user.fullname,
+      email: user.email,
+      phoneNumber: user.phoneNumber,
+      role: user.role,
+      profile: user.profile,
+    };
+
+    return res.status(200).json({
+      message: "Profile updated successfully.",
+      user,
+      success: true,
+    });
+  } catch (error) {
+    console.log(error);
+  }
+};
+
+export const logout = async (req, res) => {
+  try {
+    return res.status(200).cookie("token", "", { maxAge: 0 }).json({
+      message: "Logged out successfully.",
+      success: true,
+    });
+  } catch (error) {
+    console.log(error);
   }
 };
